@@ -27,7 +27,6 @@ const userSchema = new mongoose.Schema({
 });
 const User = mongoose.model("User", userSchema);
 
-// RFID API
 app.post("/rfid", async (req, res) => {
   try {
     const { uid, name } = req.body;
@@ -36,7 +35,6 @@ app.post("/rfid", async (req, res) => {
     let user = await User.findOne({ uid });
 
     if (user) {
-      // Toggle status
       user.status = user.status === "ENTER" ? "EXIT" : "ENTER";
       await user.save();
       return res.json({
