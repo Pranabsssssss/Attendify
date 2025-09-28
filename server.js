@@ -9,14 +9,14 @@ app.use(morgan("dev"));
 
 const mongoUri = process.env.MONGO_URI;
 if (!mongoUri) {
-  console.error("❌ MONGO_URI is not set in .env file");
+  console.error("MONGO_URI is not set in .env file");
   process.exit(1);
 }
 
 mongoose.connect(mongoUri)
-  .then(() => console.log("✅ Connected to MongoDB Atlas"))
+  .then(() => console.log("Connected to MongoDB Atlas"))
   .catch((err) => {
-    console.error("❌ MongoDB connection error:", err.message);
+    console.error("MongoDB connection error:", err.message);
     process.exit(1);
   });
   
@@ -55,16 +55,14 @@ app.post("/rfid", async (req, res) => {
       });
     }
   } catch (err) {
-    console.error("❌ Error in /rfid route:", err.message);
+    console.error("Error in /rfid route:", err.message);
     return res.status(500).json({ error: "Internal Server Error" });
   }
 });
 
-// Health Check
 app.get("/", (req, res) => {
   res.json({ status: "Server is running" });
 });
 
-// Start server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`🚀 Server running on http://localhost:${PORT}`));
