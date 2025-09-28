@@ -11,7 +11,7 @@ MFRC522 rfid(SS_PIN, RST_PIN);
 
 const char* ssid = "Saini's Tech 4G";
 const char* password = "SAINISTANDARD";
-const char* serverUrl = "http://192.168.1.5:3000/rfid";
+const char* serverUrl = "http://192.168.1.6:3000/rfid";
 
 String lastUID = "";
 unsigned long lastSendTime = 0;
@@ -52,7 +52,7 @@ void loop() {
         http.begin(client, serverUrl);
         http.addHeader("Content-Type", "application/json");
 
-        String postData = "{\"uid\":\"" + uid + "\"}";
+        String postData = "rfidkey=" + uid;
         int httpCode = http.POST(postData);
 
         if (httpCode > 0) {
