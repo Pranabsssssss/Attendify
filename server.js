@@ -46,7 +46,7 @@ app.post("/rfid", async (req, res, next) => {
       return res.status(400).json({ error: "rfidKey query parameter is required" });
     }
 
-    const timestamp = new Date().toISOString();
+    const timestamp = new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
     await saveToCSV(rfidKey.trim(), timestamp);
 
     res.status(201).json({
