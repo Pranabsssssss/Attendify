@@ -26,7 +26,6 @@ const PORT = process.env.PORT || 3000;
 const attendancePath = process.env.ATTENDANCE_PATH || path.join(__dirname, "attendance.csv");
 const csvFilePath = process.env.CSV_PATH || path.join(__dirname, "rfid_data.csv");
 
-// Get current IST timestamp - CORRECTED VERSION
 function getISTTimestamp() {
     const now = new Date();
     const istTime = now.toLocaleString('en-IN', {
@@ -38,12 +37,9 @@ function getISTTimestamp() {
         minute: '2-digit',
         hour12: false
     });
-
-    // Convert from "28/09/2025, 16:02" to "28-09-2025 16:02"
     return istTime.replace(/\//g, '-').replace(',', '');
 }
 
-// Get current IST date
 function getISTDate() {
     const now = new Date();
     const istDate = now.toLocaleDateString('en-IN', {
@@ -53,7 +49,6 @@ function getISTDate() {
     return parseInt(istDate);
 }
 
-// Ensure RFID data CSV exists
 async function ensureCSV() {
     try {
         await fs.access(csvFilePath);
@@ -63,7 +58,6 @@ async function ensureCSV() {
 }
 ensureCSV();
 
-// Ensure attendance CSV exists with proper headers
 async function ensureAttendanceCSV() {
     try {
         await fs.access(attendancePath);
@@ -75,7 +69,6 @@ async function ensureAttendanceCSV() {
 }
 ensureAttendanceCSV();
 
-// Log all known RFID UIDs from attendance CSV on startup
 async function logRFIDKeys() {
     try {
         if (!fsSync.existsSync(attendancePath)) {
@@ -106,13 +99,11 @@ async function logRFIDKeys() {
 }
 logRFIDKeys();
 
-// Append RFID entry to log CSV
 async function saveToCSV(rfidKey, timestamp) {
     const row = `${rfidKey},${timestamp}\n`;
     await fs.appendFile(csvFilePath, row, "utf8");
 }
 
-// Main RFID attendance endpoint
 app.post("/rfid", async(req, res, next) => {
     try {
         const rfidKey = req.query.rfidKey;
@@ -128,7 +119,6 @@ app.post("/rfid", async(req, res, next) => {
             return res.status(500).json({ error: "Attendance file not found." });
         }
 
-        // Read the entire CSV and split into lines
         const csvText = await fs.readFile(attendancePath, "utf8");
         const lines = csvText.split("\n").filter(Boolean);
         if (lines.length === 0) {
@@ -136,12 +126,10 @@ app.post("/rfid", async(req, res, next) => {
             return res.status(500).json({ error: "Attendance CSV is empty." });
         }
 
-        // Parse header and find columns
         const header = lines[0].split(",").map(col => col.trim());
         const rfidColIdx = header.indexOf("RFID UID");
         const currentDay = getISTDate();
 
-        // Find the column for today's date
         let dayColIdx = -1;
         for (let i = 0; i < header.length; i++) {
             if (header[i] === currentDay.toString()) {
@@ -164,15 +152,12 @@ app.post("/rfid", async(req, res, next) => {
             return res.status(500).json({ error: `Day column '${currentDay}' not found in CSV headers.` });
         }
 
-        // Find student by RFID
         let found = false;
 
         for (let i = 1; i < lines.length; i++) {
             const row = lines[i].split(",").map(col => col.trim());
             if (row[rfidColIdx] && row[rfidColIdx] === rfidKey.trim()) {
                 found = true;
-
-                // Check if attendance already marked for today
                 if (row[dayColIdx] && row[dayColIdx] !== "") {
                     console.log(`⚠️ Attendance already marked for RFID ${rfidKey} on day ${currentDay}: ${row[dayColIdx]}`);
                     return res.status(409).json({
@@ -182,20 +167,12 @@ app.post("/rfid", async(req, res, next) => {
                         day: currentDay
                     });
                 }
-
-                // Mark attendance
                 const timestamp = getISTTimestamp();
                 row[dayColIdx] = timestamp;
                 lines[i] = row.join(",");
-
-                // Save updated CSV
                 await fs.writeFile(attendancePath, lines.join("\n") + "\n", "utf8");
-
-                // Log to RFID data CSV
                 await saveToCSV(rfidKey.trim(), timestamp);
-
                 console.log(`✅ Attendance marked for RFID: ${rfidKey.trim()} at ${timestamp} (IST) on day ${currentDay}`);
-
                 return res.status(201).json({
                     success: true,
                     message: "Attendance marked successfully",
@@ -226,7 +203,50 @@ app.get("/", (req, res) => {
     });
 });
 
-// Global error handler
+app.get("/clr", async (req, res) => {
+    try {
+        if (!fsSync.existsSync(attendancePath)) {
+            return res.status(500).json({ error: "Attendance file not found." });
+        }
+        const csvText = await fs.readFile(attendancePath, "utf8");
+        const lines = csvText.split("\n").filter(Boolean);
+        if (lines.length < 1) {
+            return res.status(500).json({ error: "Attendance CSV is empty." });
+        }
+        const header = lines[0].split(",");
+        const dateColIndices = [];
+        for (let i = 0; i < header.length; i++) {
+            if (/^\d+$/.test(header[i].trim())) {
+                dateColIndices.push(i);
+            }
+        }
+        const clearedLines = [lines[0]];
+        for (let i = 1; i < lines.length; i++) {
+            if (lines[i].trim() === "") continue;
+            const row = lines[i].split(",");
+            for (const colIdx of dateColIndices) {
+                row[colIdx] = "";
+            }
+            clearedLines.push(row.join(","));
+        }
+        await fs.writeFile(attendancePath, clearedLines.join("\n") + "\n", "utf8");
+        console.log("🚨 All attendance data in date columns cleared; student rows retained.");
+        return res.json({ success: true, message: "All attendance date cells cleared. Student information retained." });
+    } catch (error) {
+        console.error("💥 Error clearing attendance dates in CSV:", error);
+        return res.status(500).json({ error: "Failed to clear attendance dates." });
+    }
+});
+
+app.get('/attendance.csv', (req, res) => {
+    res.sendFile(attendancePath, (err) => {
+        if (err) {
+            console.error("Error sending attendance.csv:", err);
+            res.status(err.status || 500).end();
+        }
+    });
+});
+
 app.use((err, req, res, next) => {
     console.error("💥 Unhandled error:", err);
     res.status(500).json({ error: "Something went wrong, please try again later" });
