@@ -1,62 +1,60 @@
 require("dotenv").config();
 const express = require("express");
-const mongoose = require("mongoose");
 const morgan = require("morgan");
+const helmet = require("helmet");
+const cors = require("cors");
+const rateLimit = require("express-rate-limit");
+const fs = require("fs").promises;
+const path = require("path");
 
 const app = express();
-app.use(express.json());
-app.use(morgan("dev"));
 
-const mongoUri = process.env.MONGO_URI;
-if (!mongoUri) {
-  console.error("MONGO_URI is not set in .env file");
-  process.exit(1);
+app.use(morgan("combined"));
+app.use(helmet());
+app.use(cors());
+
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+app.use(limiter);
+
+const PORT = process.env.PORT || 3000;
+const csvFilePath = process.env.CSV_PATH || path.join(__dirname, "rfid_data.csv");
+
+async function ensureCSV() {
+  try {
+    await fs.access(csvFilePath);
+  } catch {
+    await fs.writeFile(csvFilePath, "rfidKey,timestamp\n", "utf8");
+  }
+}
+ensureCSV();
+
+async function saveToCSV(rfidKey, timestamp) {
+  const row = `${rfidKey},${timestamp}\n`;
+  await fs.appendFile(csvFilePath, row, "utf8");
 }
 
-mongoose.connect(mongoUri)
-  .then(() => console.log("Connected to MongoDB Atlas"))
-  .catch((err) => {
-    console.error("MongoDB connection error:", err.message);
-    process.exit(1);
-  });
-  
-const userSchema = new mongoose.Schema({
-  uid: { type: String, required: true, unique: true },
-  name: { type: String },
-  status: { type: String, enum: ["ENTER", "EXIT"], default: "ENTER" },
-});
-const User = mongoose.model("User", userSchema);
-
-app.post("/rfid", async (req, res) => {
+app.post("/rfid", async (req, res, next) => {
   try {
-    const { uid, name } = req.body;
-    if (!uid) return res.status(400).json({ error: "UID is required" });
+    const { rfidKey } = req.query;
 
-    let user = await User.findOne({ uid });
-
-    if (user) {
-      user.status = user.status === "ENTER" ? "EXIT" : "ENTER";
-      await user.save();
-      return res.json({
-        message: `Status toggled to ${user.status}`,
-        user,
-      });
-    } else {
-      if (!name) {
-        return res.status(400).json({
-          error: "New user detected. Provide 'name' in request body.",
-        });
-      }
-      const newUser = new User({ uid, name, status: "ENTER" });
-      await newUser.save();
-      return res.json({
-        message: `New user ${name} registered with UID ${uid}`,
-        user: newUser,
-      });
+    if (!rfidKey || typeof rfidKey !== "string" || rfidKey.trim() === "") {
+      return res.status(400).json({ error: "rfidKey query parameter is required" });
     }
+
+    const timestamp = new Date().toISOString();
+    await saveToCSV(rfidKey.trim(), timestamp);
+
+    res.status(201).json({
+      message: "RFID data saved successfully",
+      data: { rfidKey: rfidKey.trim(), timestamp },
+    });
   } catch (err) {
-    console.error("Error in /rfid route:", err.message);
-    return res.status(500).json({ error: "Internal Server Error" });
+    next(err);
   }
 });
 
@@ -64,5 +62,11 @@ app.get("/", (req, res) => {
   res.json({ status: "Server is running" });
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`🚀 Server running on http://localhost:${PORT}`));
+app.use((err, req, res, next) => {
+  console.error("Unhandled error:", err);
+  res.status(500).json({ error: "Something went wrong, please try again later" });
+});
+
+app.listen(PORT, () =>
+  console.log(`Server running on http://localhost:${PORT}`)
+);
