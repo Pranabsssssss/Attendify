@@ -3,7 +3,6 @@ const express = require("express");
 const morgan = require("morgan");
 const helmet = require("helmet");
 const cors = require("cors");
-const rateLimit = require("express-rate-limit");
 const fs = require("fs").promises;
 const fsSync = require("fs");
 const path = require("path");
@@ -13,14 +12,6 @@ const app = express();
 app.use(morgan("combined"));
 app.use(helmet());
 app.use(cors());
-
-const limiter = rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: 100,
-    standardHeaders: true,
-    legacyHeaders: false,
-});
-app.use(limiter);
 
 const PORT = process.env.PORT || 3000;
 const attendancePath = process.env.ATTENDANCE_PATH || path.join(__dirname, "attendance.csv");
