@@ -52,7 +52,7 @@ void loop() {
         http.begin(client, serverUrl);
         http.addHeader("Content-Type", "application/json");
 
-        String postData = "rfidkey=" + uid;
+        String postData = "?rfidkey=" + uid;
         int httpCode = http.POST(postData);
 
         if (httpCode > 0) {
