@@ -4,8 +4,7 @@ const morgan = require("morgan");
 const helmet = require("helmet");
 const cors = require("cors");
 const rateLimit = require("express-rate-limit");
-const fs = require("fs").promises;
-const path = require("path");
+const mongoose = require("mongoose");
 
 const app = express();
 
@@ -22,45 +21,54 @@ const limiter = rateLimit({
 app.use(limiter);
 
 const PORT = process.env.PORT || 3000;
-const csvFilePath = process.env.CSV_PATH || path.join(__dirname, "rfid_data.csv");
+const mongoUri = process.env.MONGO_URI;
 
-const savedRFIDs = new Set();
-
-async function ensureCSV() {
-  try {
-    await fs.access(csvFilePath);
-  } catch {
-    await fs.writeFile(csvFilePath, "rfidKey,timestamp\n", "utf8");
-  }
+if (!mongoUri) {
+  console.error("MONGO_URI is not set in .env");
+  process.exit(1);
 }
-ensureCSV();
 
-async function saveToCSV(rfidKey, timestamp) {
-  const row = `${rfidKey},${timestamp}\n`;
-  await fs.appendFile(csvFilePath, row, "utf8");
+mongoose.connect(mongoUri)
+  .then(() => console.log("Connected to MongoDB"))
+  .catch(err => {
+    console.error("MongoDB connection error:", err.message);
+    process.exit(1);
+  });
+
+const rfidSchema = new mongoose.Schema({
+  rfidKey: { type: String, required: true },
+  date: { type: String, required: true },
+  timestamp: { type: String, required: true }
+});
+
+const RFID = mongoose.model("RFID", rfidSchema);
+
+function getTodayDate() {
+  return new Date().toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" });
 }
 
 app.post("/rfid", async (req, res, next) => {
   try {
     const { rfidKey } = req.query;
-
     if (!rfidKey || typeof rfidKey !== "string" || rfidKey.trim() === "") {
       return res.status(400).json({ error: "rfidKey query parameter is required" });
     }
 
     const key = rfidKey.trim();
+    const today = getTodayDate();
+    const timestamp = new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
 
-    if (savedRFIDs.has(key)) {
-      return res.status(409).json({ message: "Duplicate RFID, already saved", rfidKey: key });
+    const existingToday = await RFID.findOne({ rfidKey: key, date: today });
+    if (existingToday) {
+      return res.status(409).json({ message: "Already recorded today", rfidKey: key });
     }
 
-    const timestamp = new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
-    await saveToCSV(key, timestamp);
-    savedRFIDs.add(key);
+    const newRFID = new RFID({ rfidKey: key, date: today, timestamp });
+    await newRFID.save();
 
     res.status(201).json({
-      message: "RFID data saved successfully",
-      data: { rfidKey: key, timestamp },
+      message: "RFID saved for today",
+      data: { rfidKey: key, timestamp }
     });
   } catch (err) {
     next(err);
@@ -72,10 +80,8 @@ app.get("/", (req, res) => {
 });
 
 app.use((err, req, res, next) => {
-  console.error("Unhandled error:", err);  
+  console.error("Unhandled error:", err);
   res.status(500).json({ error: "Something went wrong, please try again later" });
 });
 
-app.listen(PORT, () =>
-  console.log(`Server running on http://localhost:${PORT}`)
-);
+app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
