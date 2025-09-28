@@ -24,6 +24,8 @@ app.use(limiter);
 const PORT = process.env.PORT || 3000;
 const csvFilePath = process.env.CSV_PATH || path.join(__dirname, "rfid_data.csv");
 
+const savedRFIDs = new Set();
+
 async function ensureCSV() {
   try {
     await fs.access(csvFilePath);
@@ -46,12 +48,19 @@ app.post("/rfid", async (req, res, next) => {
       return res.status(400).json({ error: "rfidKey query parameter is required" });
     }
 
+    const key = rfidKey.trim();
+
+    if (savedRFIDs.has(key)) {
+      return res.status(409).json({ message: "Duplicate RFID, already saved", rfidKey: key });
+    }
+
     const timestamp = new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
-    await saveToCSV(rfidKey.trim(), timestamp);
+    await saveToCSV(key, timestamp);
+    savedRFIDs.add(key);
 
     res.status(201).json({
       message: "RFID data saved successfully",
-      data: { rfidKey: rfidKey.trim(), timestamp },
+      data: { rfidKey: key, timestamp },
     });
   } catch (err) {
     next(err);
