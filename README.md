@@ -1,72 +1,69 @@
+![Banner](./banner.jpg)
+
 # NodeMCU Integration & Attendance System
 
-A complete solution for RFID-based attendance tracking using NodeMCU, with both PHP and Node.js backend options.
+A modern RFID-based attendance solution powered by NodeMCU, supporting both PHP and Node.js backends.
 
 ---
 
 ## 🚀 Features
 
-- **RFID Attendance:** Scan RFID cards to mark attendance.
-- **Dual Backend:** Supports both PHP and Node.js servers.
-- **CSV Data Storage:** Attendance records saved in CSV files.
-- **Dashboard:** View attendance via a web dashboard.
-- **Local & Cloud Hosting:** Works locally or with web hosting.
+- **RFID Attendance:** Tap RFID cards to log attendance instantly.
+- **Dual Backend:** Choose PHP or Node.js for your server.
+- **CSV Storage:** Attendance saved securely in CSV files.
+- **Interactive Dashboard:** Visualize attendance with a sleek web dashboard.
+- **Flexible Hosting:** Deploy locally or on the cloud.
 
 ---
 
 ## 📦 Project Structure
 
-```
-📦NFCA
- ┣ 📂Local
- ┃ ┣ 📜attendance.csv
- ┃ ┣ 📜package-lock.json
- ┃ ┣ 📜package.json
- ┃ ┣ 📜README.md
- ┃ ┣ 📜ReadMe.txt
- ┃ ┣ 📜rfid_data.csv
- ┃ ┗ 📜server.js
- ┣ 📂NodeMCU
- ┃ ┣ 📜NodeMCU.ino
- ┃ ┗ 📜ReadMe.txt
- ┣ 📂php Web
- ┃ ┣ 📂clr
- ┃ ┃ ┗ 📜index.php
- ┃ ┣ 📂rfid
- ┃ ┃ ┣ 📜attendance.csv
- ┃ ┃ ┗ 📜index.php
- ┃ ┣ 📜index.php
- ┃ ┣ 📜ReadMe.txt
- ┃ ┗ 📜script.js
- ┗ 📜README.md
+```plaintext
+NFCA/
+ ├─ Local/
+ │   ├─ attendance.csv
+ │   ├─ package-lock.json
+ │   ├─ package.json
+ │   ├─ README.md
+ │   ├─ ReadMe.txt
+ │   ├─ rfid_data.csv
+ │   └─ server.js
+ ├─ NodeMCU/
+ │   ├─ NodeMCU.ino
+ │   └─ ReadMe.txt
+ ├─ php Web/
+ │   ├─ clr/
+ │   │   └─ index.php
+ │   ├─ rfid/
+ │   │   ├─ attendance.csv
+ │   │   └─ index.php
+ │   ├─ index.php
+ │   ├─ ReadMe.txt
+ │   └─ script.js
+ ├─ banner.jpg
+ └─ README.md
 ```
 
 ---
 
-## 🛠️ Setup Instructions
+## 🛠️ Quick Start
 
-### 1. NodeMCU Firmware
+### 1. NodeMCU Setup
 
 - Edit `NodeMCU.ino`:
-    - Set your WiFi SSID & Password
+    - Enter your WiFi SSID & Password
     - Set your domain name
-- Upload using [Arduino IDE](https://www.youtube.com/watch?v=YN522_npNqs)
-- **Required Libraries:**
-    - MFRC522
-    - EasyMFRC
-    - AIO Module for ESP8266
-    - THINX for ESP8266
-    - ESP32 HTTP Update
-    - Adafruit MFRC630
-    - ABB PowerOne Aurora Inverter
+- Upload via [Arduino IDE](https://www.youtube.com/watch?v=YN522_npNqs)
+- **Libraries Needed:**
+    - MFRC522, EasyMFRC, AIO Module for ESP8266, THINX for ESP8266, ESP32 HTTP Update, Adafruit MFRC630, ABB PowerOne Aurora Inverter
 
-### 2. Backend Options
+### 2. Backend Setup
 
 #### **A. PHP Hosting**
 
 - Upload files to your PHP server.
-- Update `yourdomain.com` in `index.php` to your actual domain.
-- Attendance is recorded via:  
+- Update `yourdomain.com` in `index.php`.
+- Attendance API:  
     ```
     yourdomain.com/rfid?rfidKey=XXXXXXXXXXXX
     ```
@@ -78,21 +75,21 @@ A complete solution for RFID-based attendance tracking using NodeMCU, with both 
 #### **B. Node.js Local Server**
 
 - Install [Node.js](https://nodejs.org/)
-- Run in terminal:
+- Start server:
     ```
     node server.js
     ```
 - Rename `index.php` to `index.html` for dashboard.
-- Use [Cloudflared](https://developers.cloudflare.com/cloudflared/) to expose locally.
+- Use [Cloudflared](https://developers.cloudflare.com/cloudflared/) for secure public access.
 
 ---
 
-## ⚡ System Workflow
+## ⚡ Workflow Overview
 
-1. **Scan RFID:** NodeMCU sends request to `/rfid?rfidKey=XXXXXXXXXXXX`
-2. **Backend:** Searches for RFID key in CSV
-3. **Attendance:** If found, records timestamp for the date (no duplicate entries per day)
-4. **Dashboard:** Displays attendance records from CSV
+1. **Scan RFID:** NodeMCU sends `/rfid?rfidKey=XXXXXXXXXXXX`
+2. **Backend:** Looks up RFID key in CSV
+3. **Attendance:** Records timestamp (one entry per day)
+4. **Dashboard:** Displays attendance visually
 
 ---
 
@@ -102,21 +99,21 @@ A complete solution for RFID-based attendance tracking using NodeMCU, with both 
     ```
     yourdomain.com/clr
     ```
-- Replaces attendance CSV with default from `/clr` folder.
+- Resets attendance CSV from `/clr` folder.
 
 ---
 
-## ⚠️ Hosting Notes
+## ⚠️ Hosting Tips
 
 - **InfinityFree:** Free plan uses JavaScript captcha—NodeMCU/Arduino cannot solve it.  
-    Use Hostinger or similar for seamless integration.
+    Use Hostinger or similar for best results.
 
 ---
 
-## 💬 Support
+## 💬 Need Help?
 
-For help, see the [video tutorial](https://www.youtube.com/watch?v=YN522_npNqs) and ensure all required libraries are installed.
+Check the [video tutorial](https://www.youtube.com/watch?v=YN522_npNqs) and confirm all libraries are installed.
 
 ---
 
-**Enjoy building your RFID Attendance System!**
+**Build your RFID Attendance System with style!**
