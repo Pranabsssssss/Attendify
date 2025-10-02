@@ -1,4 +1,4 @@
-![Banner](./banner.jpg)
+<img src="./banner.jpg" alt="Banner" style="border-radius: 16px; width: 100%; max-width: 600px;" />
 
 # NodeMCU Integration & Attendance System
 
