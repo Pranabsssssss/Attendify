@@ -86,12 +86,33 @@ The firmware is in [`rfid/rfid.ino`](rfid/rfid.ino). Install the Arduino librari
 - Attendance logic currently uses India Standard Time (`Asia/Kolkata`) and treats Sundays and second Saturdays as non-working days. Adapt this to your school's calendar and timezone before use.
 - Review privacy, retention, and applicable education/data-protection requirements for your deployment.
 
+## Deploy to Cloudflare
+
+Attendify uses Next.js server rendering, API routes, MongoDB, and authentication. Deploy it as a **Cloudflare Worker using OpenNext and Wrangler**. Cloudflare Pages' Next.js support is for static exports and cannot run this full-stack app.
+
+The repository includes `open-next.config.ts` and `wrangler.jsonc`. After connecting the repository to Cloudflare Workers Builds, use:
+
+- **Build command:** `npx @opennextjs/cloudflare build`
+- **Deploy command:** `npx @opennextjs/cloudflare deploy -- --keep-vars`
+
+Set every `NEXT_PUBLIC_*` variable in the Workers Builds **Build variables and secrets** settings because Next.js embeds those values into browser code at build time. Add `MONGODB_URI`, `ATTENDANCE_SECURE_KEY`, and any `SMTP_*` / `VAPID_*` values as Worker runtime variables or secrets in the Cloudflare dashboard. Keep the deploy command's `--keep-vars` option so dashboard-configured runtime values remain attached to the Worker.
+
+For a local Worker preview, create `.env.local` from `.env.example`, fill in the required values, then run:
+
+```bash
+npm run preview
+```
+
+To deploy from a machine authenticated with Wrangler, run `npm run deploy`. MongoDB Atlas is supported with Mongoose 9 and Node.js compatibility; a standard Worker may establish a new database connection per request, so expect extra latency and consider a Durable Object connection layer for a high-traffic school deployment.
+
 ## Useful commands
 
 ```bash
 npm run dev    # local development
 npm run lint   # lint the project
-npm run build  # production build
+npm run build  # Next.js production build
+npm run preview # run the OpenNext Worker locally
+npm run deploy # build and deploy to Cloudflare Workers
 npm run start  # serve a production build
 ```
 
