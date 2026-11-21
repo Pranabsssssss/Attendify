@@ -1,7 +1,10 @@
 import { SignJWT, jwtVerify } from 'jose';
 import { cookies } from 'next/headers';
 
-const secretKey = process.env.ATTENDANCE_SECURE_KEY || 'default_secret_key_change_me';
+const secretKey = process.env.ATTENDANCE_SECURE_KEY;
+if (!secretKey || secretKey.length < 32) {
+    throw new Error('ATTENDANCE_SECURE_KEY must be set to a random value of at least 32 characters.');
+}
 const encodedKey = new TextEncoder().encode(secretKey);
 
 export async function createSession(payload: { userId: string; role: string }) {

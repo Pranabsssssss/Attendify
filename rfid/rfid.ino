@@ -1,7 +1,7 @@
 /*
  * Attendify - RFID Attendance System (Server-Driven Display)
  * Hardware: NodeMCU ESP8266 + RC522 RFID + TM1637 Clock + I2C LCD 16x2
- * Domain: attendify.asose.me
+ * Configure your own server URL in the configuration section below.
  */
 
 #include <ESP8266WiFi.h>
@@ -13,11 +13,13 @@
 #include <TM1637Display.h>
 #include <time.h>
 
-// ================= COFIGURATION =================
-const char* ssid = "Saini's Tech 4G";
-const char* password = "SAINISTANDARD";
-const char* apiUrl = "http://attendify.asose.me/api/rfid"; 
-const char* apiKey = "pranabfromtx";
+// ================= CONFIGURATION =================
+// Replace these placeholders with your own Wi-Fi and deployed server values.
+// Use HTTPS when your server supports it. Keep the API key private.
+const char* ssid = "YOUR_WIFI_SSID";
+const char* password = "YOUR_WIFI_PASSWORD";
+const char* apiUrl = "https://YOUR_DOMAIN/api/rfid";
+const char* apiKey = "YOUR_ATTENDANCE_SECURE_KEY";
 
 // ================= PIN DEFINITIONS =================
 #define SS_PIN     D8    

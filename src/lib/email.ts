@@ -13,7 +13,7 @@ const transporter = nodemailer.createTransport({
 export async function sendEmail(to: string, subject: string, html: string) {
     try {
         const info = await transporter.sendMail({
-            from: process.env.SMTP_FROM || 'Attendify Security <no-reply@asose.me>',
+            from: process.env.SMTP_FROM || 'Attendify Security <no-reply@example.com>',
             to,
             subject,
             html,

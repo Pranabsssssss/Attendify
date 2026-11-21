@@ -1,66 +1,100 @@
 # Attendify
 
-**Attendify** is a production-ready, full-stack, hardware-integrated attendance tracking system. It bridges the gap between physical IoT hardware and modern web technologies to deliver an instantaneous, real-time smart attendance experience. 
+Attendify is a school attendance management application built with Next.js, TypeScript, MongoDB, and optional ESP8266/RC522 RFID hardware. It includes role-based dashboards for students, teachers, principals, and IT administrators, plus leave requests, holidays, email OTP password changes, and web push notifications.
 
-> **Live Implementation**: Attendify is actively deployed and running in a real-world educational institution, handling daily influxes of student attendances seamlessly, ensuring reliability, security, and performance at scale.
+This repository is a starting point for your own school deployment. It does not include production credentials, school data, or a preconfigured database.
 
-## 🚀 Features & Architecture
+## Technology
 
-### High-Performance Web Platform
-- **Modern Stack:** Built on **Next.js 16** (App Router) with **TypeScript**, powered by **Turbopack** for blazing fast compilation.
-- **Interactive UI/UX:** Stunning user interfaces crafted with **Tailwind CSS**, **Framer Motion** for micro-animations, and **Radix UI** primitives for accessibility.
-- **3D Experiences:** Integrates **Three.js** via React Three Fiber (`@react-three/fiber`, `@react-three/drei`) for engaging, dynamic 3D elements in the frontend.
-- **Database Architecture:** Robust data modeling with **Mongoose (MongoDB)** handling thousands of attendance logs, securely mapping students, RFID tags, and holiday schedules.
+- Next.js 16 App Router, React 19, TypeScript, and Tailwind CSS 4
+- MongoDB with Mongoose
+- Signed JWT sessions using `jose`, password hashing with `bcryptjs`
+- Nodemailer for email and `web-push` for browser notifications
+- Optional Arduino firmware for NodeMCU ESP8266 and RC522 RFID readers
+- Three.js / React Three Fiber for the attendance machine visual
 
-### Advanced IoT Integration
-- **Custom Hardware Firmware:** Written in **C++** for NodeMCU ESP8266 (`rfid/rfid.ino`).
-- **Real-Time Processing:** Incorporates RC522 RFID Scanners, TM1637 Displays, and I2C LCDs to give immediate tactile and visual feedback on the device.
-- **Smart Debouncing & Offline Resilience:** Edge-level handling of duplicate card taps and Wi-Fi disconnect fallbacks, preventing server flooding.
+## Requirements
 
-### Enterprise-Grade Backend Logic
-- **Timezone-Aware Computations:** Built-in logic for IST calculations to detect late arrivals, second Saturdays, Sundays, and dynamic holidays without heavy server load.
-- **Security & Cryptography:** Custom `x-api-key` validation for hardware endpoints, paired with **bcryptjs** and **jose** (JWTs) for secure user sessions.
-- **Push Notifications:** Automated Web Push Notifications (`web-push`) and Email alerts (`nodemailer`) dispatched immediately upon attendance marking.
+- Node.js 20.9 or newer and npm
+- A MongoDB database (local or hosted)
+- A modern browser
+- Optional: Arduino IDE, NodeMCU ESP8266, RC522 reader, and the display hardware listed in `rfid/rfid.ino`
 
-## 🛠️ Getting Started
+## Run locally
 
-### Prerequisites
-- Node.js 18+ 
-- MongoDB instance (Local or Atlas)
-- NodeMCU ESP8266 + RC522 Module (for hardware setup)
+1. Clone the repository and install dependencies:
 
-### Installation
-
-1. **Clone the repository:**
    ```bash
    git clone https://github.com/Pranabsssssss/Attendify.git
    cd Attendify
-   ```
-
-2. **Install dependencies:**
-   ```bash
    npm install
    ```
 
-3. **Configure Environment Variables:**
-   Create a `.env.local` file in the root directory and add the required variables:
-   ```env
-   MONGODB_URI=your_mongodb_connection_string
-   ATTENDANCE_SECURE_KEY=your_hardware_api_secret
-   LATE_TIME=08:00:00
+2. Copy `.env.example` to `.env.local` and fill in the values. `.env.local` is ignored by Git. Generate a session secret with:
+
+   ```bash
+   node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
    ```
 
-4. **Run the Development Server:**
+   Generate VAPID keys for push notifications with:
+
+   ```bash
+   npx web-push generate-vapid-keys
+   ```
+
+   Push notification keys are optional; leave them unset to disable push. SMTP settings are needed for email OTP password changes. Set up the database, session secret, and role registration codes before running the app.
+
+3. Start the development server:
+
    ```bash
    npm run dev
    ```
-   Navigate to [http://localhost:3000](http://localhost:3000) to view the application.
 
-### Hardware Setup
-Flash the firmware located in `rfid/rfid.ino` to your NodeMCU using the Arduino IDE. Ensure you update the Wi-Fi credentials and `apiUrl` to point to your live or local server.
+   Visit [http://localhost:3000](http://localhost:3000).
 
-## 📈 Scalability & Impact
-Attendify was built with scalability in mind. Its decoupled architecture ensures that the lightweight Next.js backend can process high-frequency concurrent requests from multiple RFID nodes effortlessly. It represents a complete end-to-end engineering solution—from soldering hardware and writing C++ firmware to deploying an optimized serverless web application.
+4. Create your initial IT administrator using the IT Admin registration code configured in `.env.local`. Configure the other role codes and distribute them to the people who should enroll.
 
----
-*Developed by Pranab Saini*
+## Environment variables
+
+See [`.env.example`](.env.example) for the full list and suggested values.
+
+| Variable | Purpose |
+| --- | --- |
+| `MONGODB_URI` | MongoDB connection URI for this deployment |
+| `ATTENDANCE_SECURE_KEY` | Random secret (at least 32 characters) used to sign sessions and authenticate RFID requests; use the same value in the firmware |
+| `LATE_TIME` | Local school arrival cutoff in `HH:MM:SS` format |
+| `NEXT_PUBLIC_ACCESS_CODE_*` | Per-role enrollment codes. `NEXT_PUBLIC_` values are included in browser JavaScript, so treat them as enrollment gates, not secrets. Disable public registration or add a trusted invitation/admin workflow before relying on them for production access control. |
+| `NEXT_PUBLIC_CLASS_RANGE_START`, `NEXT_PUBLIC_CLASS_RANGE_END` | Allowed class grade range |
+| `NEXT_PUBLIC_RESTRICTED_SECTIONS` | Comma-separated section names or class-section values to hide/block, for example `C,6-A` |
+| `NEXT_PUBLIC_ATTENDANCE_START_DATE` | First date shown in attendance history (`YYYY-MM-DD`) |
+| `NEXT_PUBLIC_LEAVE_CUTOFF_TIME` | Leave request cutoff in `HH:MM` |
+| `SMTP_*` | SMTP host, port, login, password, and sender used for OTP email |
+| `VAPID_*` | Web push subject and VAPID keys; the public key is exposed to browsers by design |
+
+Use separate, strong values and separate databases for development and production. Never commit `.env.local`, production credentials, or real school/student data.
+
+## Optional RFID hardware
+
+The firmware is in [`rfid/rfid.ino`](rfid/rfid.ino). Install the Arduino libraries used by its includes (ESP8266 core, MFRC522, LiquidCrystal_I2C, and TM1637Display), then set the Wi-Fi SSID/password, server URL, and API key placeholders in the sketch before flashing it. The server URL should use HTTPS in deployments where TLS is available. Keep the API key out of source control and configure it as `ATTENDANCE_SECURE_KEY` on the server. Enroll each card's UID to the corresponding user in the database.
+
+## Production notes
+
+- Deploy to a Node.js-compatible host and configure environment variables in the host's secret manager.
+- Use HTTPS, restrict database network access, and back up MongoDB.
+- Review registration and account provisioning before opening the app to the public. Browser-exposed role codes are not authentication secrets.
+- Set up your own SMTP provider and VAPID keys if you need email or push notifications.
+- Attendance logic currently uses India Standard Time (`Asia/Kolkata`) and treats Sundays and second Saturdays as non-working days. Adapt this to your school's calendar and timezone before use.
+- Review privacy, retention, and applicable education/data-protection requirements for your deployment.
+
+## Useful commands
+
+```bash
+npm run dev    # local development
+npm run lint   # lint the project
+npm run build  # production build
+npm run start  # serve a production build
+```
+
+## License
+
+This project is licensed under the MIT License. See [LICENSE](LICENSE).

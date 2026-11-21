@@ -28,11 +28,13 @@ const ROLES: { id: Role; label: string; icon: any }[] = [
     { id: 'it_admin', label: 'IT Admin', icon: ShieldCheck },
 ];
 
-// Generate dropdown options: 6-A to 12-E, filtering out restricted ones
+// Generate dropdown options from this deployment's configured grade range.
 const RESTRICTED_SECTIONS = (process.env.NEXT_PUBLIC_RESTRICTED_SECTIONS || '').split(',').map(s => s.trim().toUpperCase());
+const CLASS_RANGE_START = Number.parseInt(process.env.NEXT_PUBLIC_CLASS_RANGE_START || '6', 10);
+const CLASS_RANGE_END = Number.parseInt(process.env.NEXT_PUBLIC_CLASS_RANGE_END || '12', 10);
 
 const CLASS_OPTIONS: string[] = [];
-for (let i = 6; i <= 12; i++) {
+for (let i = CLASS_RANGE_START; i <= CLASS_RANGE_END; i++) {
     ['A', 'B', 'C', 'D', 'E'].forEach(sec => {
         const option = `${i}-${sec}`;
         // Check if specific "6-C" or generic "C" is restricted

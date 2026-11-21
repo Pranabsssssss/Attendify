@@ -4,12 +4,13 @@ import User from '@/models/User';
 import Class from '@/models/Class';
 import { hashPassword } from '@/lib/auth/password';
 
-// Hardcoded keys are now in ENV, fallback for safety
+// NEXT_PUBLIC values ship to browsers, so registration codes are enrollment
+// gates for a deployment, not secrets or a replacement for access control.
 const ACCESS_CODES = {
-    it_admin: process.env.NEXT_PUBLIC_ACCESS_CODE_IT_ADMIN || 'ADMIN_SECURE_2026',
-    principal: process.env.NEXT_PUBLIC_ACCESS_CODE_PRINCIPAL || 'PRINCIPAL_KEY_2026',
-    teacher: process.env.NEXT_PUBLIC_ACCESS_CODE_TEACHER || 'TEACHER_JOIN_2026',
-    student: process.env.NEXT_PUBLIC_ACCESS_CODE_STUDENT || 'STUDENT_WELCOME_2026',
+    it_admin: process.env.NEXT_PUBLIC_ACCESS_CODE_IT_ADMIN,
+    principal: process.env.NEXT_PUBLIC_ACCESS_CODE_PRINCIPAL,
+    teacher: process.env.NEXT_PUBLIC_ACCESS_CODE_TEACHER,
+    student: process.env.NEXT_PUBLIC_ACCESS_CODE_STUDENT,
 };
 
 export async function POST(req: NextRequest) {
@@ -41,7 +42,7 @@ export async function POST(req: NextRequest) {
 
         // 1. Validate Access Code
         const expectedCode = ACCESS_CODES[role as keyof typeof ACCESS_CODES];
-        if (accessCode !== expectedCode) {
+        if (!expectedCode || accessCode !== expectedCode) {
             return NextResponse.json({ error: 'Invalid Access Code for this role' }, { status: 403 });
         }
 
@@ -84,7 +85,7 @@ export async function POST(req: NextRequest) {
             const section = parts.length > 1 ? parts[1].trim().toUpperCase() : 'A';
 
             // --- VALIDATION START ---
-            const rangeStart = parseInt(process.env.NEXT_PUBLIC_CLASS_RANGE_START || '1');
+            const rangeStart = parseInt(process.env.NEXT_PUBLIC_CLASS_RANGE_START || '6');
             const rangeEnd = parseInt(process.env.NEXT_PUBLIC_CLASS_RANGE_END || '12');
             const restrictedSections = (process.env.NEXT_PUBLIC_RESTRICTED_SECTIONS || '').split(',').map(s => s.trim().toUpperCase());
 
