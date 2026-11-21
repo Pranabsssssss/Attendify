@@ -1,18 +1,13 @@
 import { SignJWT, jwtVerify } from 'jose';
 import { cookies } from 'next/headers';
-
-const secretKey = process.env.ATTENDANCE_SECURE_KEY;
-if (!secretKey || secretKey.length < 32) {
-    throw new Error('ATTENDANCE_SECURE_KEY must be set to a random value of at least 32 characters.');
-}
-const encodedKey = new TextEncoder().encode(secretKey);
+import { getSessionSecretKey } from '@/lib/auth/secret';
 
 export async function createSession(payload: { userId: string; role: string }) {
     const session = await new SignJWT(payload)
         .setProtectedHeader({ alg: 'HS256' })
         .setIssuedAt()
         .setExpirationTime('7d')
-        .sign(encodedKey);
+        .sign(getSessionSecretKey());
 
     const cookieStore = await cookies();
     cookieStore.set('session', session, {
@@ -37,7 +32,7 @@ export async function getSession(): Promise<SessionPayload | null> {
     if (!session) return null;
 
     try {
-        const { payload } = await jwtVerify(session, encodedKey, {
+        const { payload } = await jwtVerify(session, getSessionSecretKey(), {
             algorithms: ['HS256'],
         });
         return payload as unknown as SessionPayload;

@@ -1,12 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { jwtVerify } from 'jose';
-
-const secretKey = process.env.ATTENDANCE_SECURE_KEY;
-if (!secretKey || secretKey.length < 32) {
-    throw new Error('ATTENDANCE_SECURE_KEY must be set to a random value of at least 32 characters.');
-}
-const encodedKey = new TextEncoder().encode(secretKey);
+import { getSessionSecretKey } from '@/lib/auth/secret';
 
 export async function proxy(request: NextRequest) {
     const { pathname } = request.nextUrl;
@@ -26,7 +21,7 @@ export async function proxy(request: NextRequest) {
         const sessionCookie = request.cookies.get('session');
         if (sessionCookie && (pathname === '/login' || pathname === '/' || pathname === '/register')) {
             try {
-                const { payload } = await jwtVerify(sessionCookie.value, encodedKey, {
+                const { payload } = await jwtVerify(sessionCookie.value, getSessionSecretKey(), {
                     algorithms: ['HS256'],
                 });
                 // Redirect logged-in user to their dashboard
@@ -46,7 +41,7 @@ export async function proxy(request: NextRequest) {
     }
 
     try {
-        const { payload } = await jwtVerify(sessionCookie.value, encodedKey, {
+        const { payload } = await jwtVerify(sessionCookie.value, getSessionSecretKey(), {
             algorithms: ['HS256'],
         });
 

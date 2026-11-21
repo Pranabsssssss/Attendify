@@ -1,11 +1,5 @@
 import mongoose from 'mongoose';
 
-const MONGODB_URI = process.env.MONGODB_URI;
-
-if (!MONGODB_URI) {
-  throw new Error('Please define the MONGODB_URI environment variable inside .env.local');
-}
-
 /**
  * Global interface to allow caching the connection across hot reloads in development.
  */
@@ -26,6 +20,13 @@ if (!global.mongoose) {
 }
 
 async function dbConnect() {
+  // Read this at request time rather than module load so Next.js can collect
+  // route configuration during builds without production secrets present.
+  const mongoUri = process.env.MONGODB_URI;
+  if (!mongoUri) {
+    throw new Error('MONGODB_URI must be set in the runtime environment (or .env.local for local development).');
+  }
+
   if (cached.conn) {
     return cached.conn;
   }
@@ -35,7 +36,7 @@ async function dbConnect() {
       bufferCommands: false,
     };
 
-    cached.promise = mongoose.connect(MONGODB_URI!, opts).then((mongoose) => {
+    cached.promise = mongoose.connect(mongoUri, opts).then((mongoose) => {
       return mongoose;
     });
   }
