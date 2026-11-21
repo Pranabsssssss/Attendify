@@ -40,9 +40,10 @@ export async function broadcastNotification(title: string, message: string, targ
 
     await dbConnect();
 
-    const users = await User.find(targetRole === 'all' ? {} : { role: targetRole }).select('_id');
+    const query: Record<string, any> = targetRole === 'all' ? {} : { role: targetRole };
+    const users = await User.find(query).select('_id').lean();
 
-    const notifications = users.map(user => ({
+    const notifications = users.map((user: any) => ({
         recipient: user._id,
         title,
         message,
